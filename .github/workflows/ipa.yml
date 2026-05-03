@@ -229,6 +229,8 @@ jobs:
     name: Update GitHub Release
     needs: [prepareDependencies, inject, patch]
     runs-on: macos-latest
+    permissions:
+      contents: write
     env:
       IPA_APP_NAME: ${{ needs.prepareDependencies.outputs.ipa_app_name }}
     steps:
