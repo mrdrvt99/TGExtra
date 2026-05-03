@@ -14,7 +14,7 @@ To Open Tweak menu : Longpress screen with 3 finger (if no flex injected) of 4 f
 - No Read Receipt for messages and Stories
 - Allow saving Protected Content
   
-### Lead features
+### Lead Features
 - Save Restricted Media — save media even where it’s restricted.
 - Anti-Screenshot — take screenshots without notifications.
 - Anti-Self-Destruct — disappearing photos and videos no longer disappear.
