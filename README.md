@@ -20,6 +20,7 @@ To Open Tweak menu : Longpress screen with 3 finger (if no flex injected) of 4 f
 - Anti-Self-Destruct — disappearing photos and videos no longer disappear.
 - Anti-Revoke — deleted messages no longer disappear for you.
 - Anti-Edit — view the original text even after it’s been edited. (Work in Progress)
+  
 Tweak by [@Lead](https://t.me/Leadgramm)
 
 ## Disclaimer
