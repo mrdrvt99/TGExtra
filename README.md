@@ -1,7 +1,7 @@
 # TGExtra + Lead
 A simple Telegram iOS Tweak.
 
-To Open Tweak menu : Longpress screen with 3 finger (if no flex injected) of 4 fingers.
+To Open Tweak menu : Open settings and scroll down to "Ask a Question" and hold press to pull up the settings.
 
 ## Screenshots
 
