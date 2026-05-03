@@ -10,7 +10,7 @@ on:
 
 jobs:
   cleanup:
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -23,7 +23,7 @@ jobs:
 
   build:
     needs: cleanup
-    runs-on: macos-14
+    runs-on: macos-latest
     strategy:
       matrix:
         scheme: [rootful, rootless, roothide]
@@ -58,7 +58,7 @@ jobs:
 
   cyan:
     needs: build
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -90,7 +90,7 @@ jobs:
 
   release:
     needs: cyan
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -149,7 +149,7 @@ jobs:
           done
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
