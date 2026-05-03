@@ -1,4 +1,4 @@
-# TGExtra
+# TGExtra + Lead
 A simple Telegram iOS Tweak.
 
 To Open Tweak menu : Longpress screen with 3 finger (if no flex injected) of 4 fingers.
@@ -8,13 +8,19 @@ To Open Tweak menu : Longpress screen with 3 finger (if no flex injected) of 4 f
 ![Screenshot 1](Screenshots/1.png)
 ![Screenshot 2](Screenshots/2.png)
 
-## Features
-
+### TGExtra Features
 - Disable Ads
 - Ghost Mode
 - No Read Receipt for messages and Stories
-- Allow saving Protected Content ( Due to frequenet Telegram Api updates this feature is only limited for client compiled with 11.8.1 sources)
-
+- Allow saving Protected Content
+  
+### Lead features
+- Save Restricted Media — save media even where it’s restricted.
+- Anti-Screenshot — take screenshots without notifications.
+- Anti-Self-Destruct — disappearing photos and videos no longer disappear.
+- Anti-Revoke — deleted messages no longer disappear for you.
+- Anti-Edit — view the original text even after it’s been edited. (Work in Progress)
+Tweak by [@Lead](https://t.me/Leadgramm)
 
 ## Disclaimer
 
