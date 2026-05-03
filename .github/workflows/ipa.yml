@@ -11,7 +11,7 @@ on:
 jobs:
   prepareDependencies:
     name: Prepare Dependencies
-    runs-on: macos-14
+    runs-on: macos-latest
     outputs:
       ipa_app_name: ${{ steps.extractIPA.outputs.ipa_app_name }}
       ipa_bundle_id: ${{ steps.extractIPA.outputs.ipa_bundle_id }}
@@ -71,12 +71,13 @@ jobs:
             TGExtra.bundle
             SideloadFix.dylib
             NSEFix.dylib
+            Lead.dylib
             com.choco.tg_*_iphoneos-arm.deb
 
   inject:
     name: Inject TGExtra + Sideload & NSE Fix
     needs: prepareDependencies
-    runs-on: macos-14
+    runs-on: macos-latest
     env:
       IPA_BUNDLE_ID: ${{ needs.prepareDependencies.outputs.ipa_bundle_id }}
       IPA_VERSION: ${{ needs.prepareDependencies.outputs.ipa_version }}
@@ -133,6 +134,7 @@ jobs:
 
           cp "dependencies/SideloadFix.dylib" "$APP_PATH/Frameworks/SideloadFix.dylib"
           cp "dependencies/NSEFix.dylib" "$APP_PATH/Frameworks/NSEFix.dylib"
+          cp "dependencies/Lead.dylib" "$APP_PATH/Frameworks/Lead.dylib"
 
           insert_dylib --all-yes @executable_path/Frameworks/$DYLIB_NAME "$BIN_PATH"
           mv "$BIN_PATH"_patched "$BIN_PATH"
@@ -140,12 +142,14 @@ jobs:
           mv "$BIN_PATH"_patched "$BIN_PATH"
           insert_dylib --all-yes @executable_path/Frameworks/NSEFix.dylib "$BIN_PATH"
           mv "$BIN_PATH"_patched "$BIN_PATH"
+          insert_dylib --all-yes @executable_path/Frameworks/Lead.dylib "$BIN_PATH"   
+          mv "$BIN_PATH"_patched "$BIN_PATH"
 
           cp -R "$TGEXTRA_BUNDLE" "$APP_PATH/"
 
           ldid -S "$BIN_PATH"
 
-          otool -L "$BIN_PATH" | grep -E "($DYLIB_NAME|SideloadFix.dylib|NSEFix.dylib)"
+          otool -L "$BIN_PATH" | grep -E "($DYLIB_NAME|SideloadFix.dylib|NSEFix.dylib|Lead.dylib)"
 
           (cd "$TMP_DIR" && zip -qr "../$OUT_IPA" .)
           cp "$OUT_IPA" "artifacts/$OUT_IPA"
@@ -164,7 +168,7 @@ jobs:
   patch:
     name: Patch injected IPA
     needs: [prepareDependencies, inject]
-    runs-on: macos-14
+    runs-on: macos-latest
     env:
       IPA_BUNDLE_ID: ${{ needs.prepareDependencies.outputs.ipa_bundle_id }}
       IPA_VERSION: ${{ needs.prepareDependencies.outputs.ipa_version }}
@@ -224,7 +228,7 @@ jobs:
   updateRelease:
     name: Update GitHub Release
     needs: [prepareDependencies, inject, patch]
-    runs-on: macos-14
+    runs-on: macos-latest
     env:
       IPA_APP_NAME: ${{ needs.prepareDependencies.outputs.ipa_app_name }}
     steps:
@@ -239,7 +243,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release view release --repo ${{ github.repository }} --json body --jq .body > release_body.md
+          if gh release view release --repo ${{ github.repository }} --json body --jq .body > release_body.md 2>/dev/null; then
+            echo "Release found, body fetched."
+          else
+            echo "" > release_body.md
+            echo "No existing release found, starting fresh."
+          fi
 
       - name: Generate Checksums
         id: metadata
@@ -294,7 +303,7 @@ jobs:
   cleanup:
     name: Cleanup
     needs: updateRelease
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - name: Delete build artifacts
         uses: geekyeggo/delete-artifact@v5
