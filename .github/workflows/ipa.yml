@@ -11,7 +11,7 @@ on:
 jobs:
   prepareDependencies:
     name: Prepare Dependencies
-    runs-on: macos-14
+    runs-on: macos-15
     outputs:
       ipa_app_name: ${{ steps.extractIPA.outputs.ipa_app_name }}
       ipa_bundle_id: ${{ steps.extractIPA.outputs.ipa_bundle_id }}
@@ -19,7 +19,7 @@ jobs:
       tgextra_version: ${{ steps.extractTGExtra.outputs.tgextra_version }}
     steps:
       - name: Fetch TGExtra.bundle
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download decrypted IPA
         env:
@@ -45,7 +45,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release download release --repo TheWinner02/TGExtra --pattern 'com.choco.tg_*_iphoneos-arm.deb' --dir .
+          gh release download --repo TheWinner02/TGExtra --pattern 'com.choco.tg_*_iphoneos-arm.deb' --dir .
 
       - name: Extract TGExtra version
         id: extractTGExtra
@@ -63,7 +63,7 @@ jobs:
           gh release download release --repo TheWinner02/NSEFix --pattern 'NSEFix.dylib' --dir .
 
       - name: Upload Dependencies
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dependencies
           path: |
@@ -76,14 +76,14 @@ jobs:
   inject:
     name: Inject TGExtra + Sideload & NSE Fix
     needs: prepareDependencies
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       IPA_BUNDLE_ID: ${{ needs.prepareDependencies.outputs.ipa_bundle_id }}
       IPA_VERSION: ${{ needs.prepareDependencies.outputs.ipa_version }}
       TGEXTRA_VERSION: ${{ needs.prepareDependencies.outputs.tgextra_version }}
     steps:
       - name: Download dependencies
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dependencies
           name: dependencies
@@ -116,7 +116,7 @@ jobs:
           mkdir -p deb-extract artifacts
           ar x "$TGEXTRA_DEB"
           tar -xf data.tar.* -C deb-extract
-          
+
           find deb-extract -name "*.dylib"
 
 
@@ -127,10 +127,10 @@ jobs:
           BIN_PATH="$APP_PATH/$EXECUTABLE_NAME"
 
           mkdir -p "$APP_PATH/Frameworks"
-          
+
           DYLIB_PATH=$(find deb-extract -name "*.dylib" | head -n 1)
           cp "$DYLIB_PATH" "$APP_PATH/Frameworks/$DYLIB_NAME"
-          
+
           cp "dependencies/SideloadFix.dylib" "$APP_PATH/Frameworks/SideloadFix.dylib"
           cp "dependencies/NSEFix.dylib" "$APP_PATH/Frameworks/NSEFix.dylib"
 
@@ -150,11 +150,11 @@ jobs:
           (cd "$TMP_DIR" && zip -qr "../$OUT_IPA" .)
           cp "$OUT_IPA" "artifacts/$OUT_IPA"
           cp "$OUT_IPA" "artifacts/$OUT_TIPA"
-          
+
           rm -rf deb-extract "$TMP_DIR"
 
       - name: Upload injected IPA
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: injected-artifacts
           path: |
@@ -164,21 +164,21 @@ jobs:
   patch:
     name: Patch injected IPA
     needs: [prepareDependencies, inject]
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       IPA_BUNDLE_ID: ${{ needs.prepareDependencies.outputs.ipa_bundle_id }}
       IPA_VERSION: ${{ needs.prepareDependencies.outputs.ipa_version }}
       TGEXTRA_VERSION: ${{ needs.prepareDependencies.outputs.tgextra_version }}
     steps:
       - name: Download dependencies
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dependencies
           name: dependencies
           merge-multiple: true
 
       - name: Download injected IPA
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           name: injected-artifacts
@@ -214,7 +214,7 @@ jobs:
           ipapatch --input "$INJECTED_TIPA" --inplace --noconfirm
 
       - name: Upload injected IPA
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: patched-artifacts
           path: |
@@ -224,12 +224,14 @@ jobs:
   updateRelease:
     name: Update GitHub Release
     needs: [prepareDependencies, inject, patch]
-    runs-on: macos-14
+    runs-on: macos-15
+    permissions:
+      contents: write
     env:
       IPA_APP_NAME: ${{ needs.prepareDependencies.outputs.ipa_app_name }}
     steps:
       - name: Download injected IPA
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           name: patched-artifacts
@@ -239,7 +241,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release view release --repo ${{ github.repository }} --json body --jq .body > release_body.md
+          gh release view release --repo ${{ github.repository }} --json body --jq .body > release_body.md || echo "" > release_body.md
 
       - name: Generate Checksums
         id: metadata
@@ -254,7 +256,6 @@ jobs:
               }
             ' release_body.md > release_body.tmp && mv release_body.tmp release_body.md
           fi
-
           for ipa in artifacts/*.ipa; do
             if [ -f "$ipa" ]; then
               echo "### $IPA_APP_NAME (Sideload)" >> release_body.md
@@ -265,7 +266,6 @@ jobs:
               break
             fi
           done
-
           for tipa in artifacts/*.tipa; do
             if [ -f "$tipa" ]; then
               echo "### $IPA_APP_NAME (TrollStore)" >> release_body.md
@@ -278,7 +278,7 @@ jobs:
           done
 
       - name: Update GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -291,17 +291,16 @@ jobs:
           draft: false
           prerelease: false
           make_latest: true
+
   cleanup:
     name: Cleanup
     needs: updateRelease
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Delete build artifacts
-        uses: geekyeggo/delete-artifact@v5
+        uses: geekyeggo/delete-artifact@v6
         with:
           name: |
             artifacts
             dependencies
           failOnError: false
-
-
